@@ -26,8 +26,29 @@ tab:	.asciiz "\t"
 #
 # Returns: the length of the string
 #------------------------------------------------------------------------------
+# C code
+#
+# int summ = 0;
+# char *s = "hello";
+# while (s != NULL) {
+#		summ = summ + 1;
+#		s++:
+#	}
+# return summ;
+
 strlen:
 	# YOUR CODE HERE
+	add $v0, $0, $0
+	beq $a0, $0, ret1
+
+iterate:
+	lb $t0, 0($a0)
+	beq $t0, $0, ret1
+	addi $a0, $a0, 1
+	addi $v0, $v0, 1
+	j iterate
+
+ret1:
 	jr $ra
 
 #------------------------------------------------------------------------------
@@ -40,8 +61,39 @@ strlen:
 #
 # Returns: the destination array
 #------------------------------------------------------------------------------
+# C code
+#
+# *x = $a0
+# *y = $a1
+# n = $a2
+#
+# int k = 0;
+# for (k; k < n; k++) {
+#   *x = * y;	
+#	x++;	  	
+#	y++;
+# }
+# return y;
+
 strncpy:
 	# YOUR CODE HERE
+	addi   $t0, $0, 0
+	addi   $t1, $a1, 0
+	addi   $t2, $a0, 0
+	slt    $t3, $t0, $a2
+	beq    $t3, $0, ret
+
+loop:
+	lb $t4, 0($t1)
+	sb $t4, 0($t2)
+	addi $t1, $t1, 1
+	addi $t2, $t2, 1
+	addi $t0, $t0, 1
+	slt $t3, $t0, $a2
+	bne $t3, $0, loop
+
+ret:
+	addi $v0, $a0, 0
 	jr $ra
 
 #------------------------------------------------------------------------------
@@ -56,9 +108,38 @@ strncpy:
 #
 # Returns: pointer to the copy of the string
 #------------------------------------------------------------------------------
+# C code
+#
+# char *s = malloc(strlen(x) + 1);
+# s = strncpy(s, x, strlen(x));
+# return s;
+#
+#
 copy_of_str:
 	# YOUR CODE HERE
-	jr $ra
+	# Prologue, storing $ra and $a0 and $s0 to the stack.
+	addiu 	$sp, $sp, -12
+	sw 		$ra, 0($sp)
+	sw 		$a0, 4($sp)
+	sw 		$s0, 8($sp)
+	addi 	$s0, $a0, 0
+	jal strlen				# Will contain the length of the string in $v0.
+
+	addi 	$a1, $s0, 0
+	addi 	$a2, $v0, 0		# Setting up the arguments required for a syscall that allocates memory for the copied string.
+
+	addi 	$a0, $v0, 0
+	addiu 	$v0, $0, 9			# Syscall for allocating space on the heap.
+	syscall
+	addi 	$a0, $v0, 0
+	jal strncpy
+
+	#Epilogue
+	lw 		$s0, 8($sp)
+	lw 		$a0, 4($sp)
+	lw 		$ra, 0($sp)
+	addiu 	$sp, $sp, -12
+	jr 		$ra
 
 ###############################################################################
 #                 DO NOT MODIFY ANYTHING BELOW THIS POINT                       

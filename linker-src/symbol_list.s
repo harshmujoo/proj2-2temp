@@ -49,8 +49,38 @@
 #------------------------------------------------------------------------------
 addr_for_symbol:
 	# YOUR CODE HERE
+	addiu $sp, $sp, -16
+	sw $ra, 0($sp)
+	sw $s1, 4($sp)
+	sw $s2, 8($sp)
+	sw $s3, 12($sp)
+	addi $s1, $a0, 0
+	addi $s2, $a1, 0
+
+loop1:
+	beq $s1, 0, miss
+	lw $a0, 4($s1)
+	jal streq
+	addi $a1, $s2, 0
+	beq $v0, $s0, hit
+	lw $s1, 8($s1)
+	j loop1
+
+hit:
+	lw $v0, 0($s1)
+	j ret2
+
+miss:
+	addiu $v0, $0, -1
+
+ret2:
+	lw $s3, 12($sp)
+	lw $s2, 8($sp)
+	lw $s1, 4($sp)
+	lw $ra, 0($sp)
+	addi $sp, $sp, 16
 	jr $ra
-	
+
 ###############################################################################
 #                 DO NOT MODIFY ANYTHING BELOW THIS POINT                       
 ###############################################################################
