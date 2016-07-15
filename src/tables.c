@@ -44,12 +44,42 @@ void write_symbol(FILE* output, uint32_t addr, const char* name) {
    to store this value for use during add_to_table().
  */
 SymbolTable* create_table(int mode) {
-    /* YOUR CODE HERE */
+    // Allocate memory for table
+    SymbolTable * table = malloc(sizeof(SymbolTable));
+    if (!table) {
+       allocation_failed();
+    }
+
+    // Initialize table attributes
+    table->len = 0; // how many symbols the table contains
+    table->cap = INITIAL_SIZE; // max number of symbols that can be stored using the allocated memory
+    table->mode = mode;
+
+    // Add symbols to table
+    // Allocate memory for symbols
+    Symbol * symbols = malloc(sizeof(Symbol) * INITIAL_SIZE);
+    if (!symbols) {
+       allocation_failed();
+    }
+
+    // Set table pointer to symbols
+    table->tbl = symbols;
+
+    return table;
 }
 
 /* Frees the given SymbolTable and all associated memory. */
 void free_table(SymbolTable* table) {
-    /* YOUR CODE HERE */
+    Symbol * symbols = table->tbl;
+    int len = table->len;
+
+    for (int i = 0; i < len; i++) {
+      free(symbols->name);
+      symbols++;
+    }
+
+    free(table->tbl);
+    free(table);
 }
 
 /* A suggested helper function for copying the contents of a string. */
@@ -78,15 +108,69 @@ static char* create_copy_of_str(const char* str) {
    Otherwise, you should store the symbol name and address and return 0.
  */
 int add_to_table(SymbolTable* table, const char* name, uint32_t addr) {
-    /* YOUR CODE HERE */
-    return -1;
+    // Check if address is word aligned
+    if (addr % 4 != 0)  { 
+      addr_alignment_incorrect();
+      return -1;
+    }
+
+    // Get table attributes
+    Symbol * symbols = table->tbl; // pointer to symbol list
+    int len = table->len; // get length of list
+    int cap = table->cap; // get max capacity of list
+    int mode = table->mode; // mode == SYMTBL_UNIQUE_NAME or SYMTBL_NON_UNIQUE
+
+    // Copy name pointer to allocated memory
+    char * name_copy = create_copy_of_str(name);
+
+    // Check if table is full
+    if (len == cap) {
+      //printf("%s", "Resizing");
+      // Allocate more memory
+      table->tbl = (Symbol *) realloc(table->tbl, (sizeof(Symbol) * (cap * SCALING_FACTOR)));
+      if (!table->tbl) {
+        allocation_failed();
+      }
+      table->cap = cap * SCALING_FACTOR;
+      symbols = table->tbl;
+    }
+
+    // Iterate over symbols array 
+    for (int i = 0; i < len; i++) {
+        char * current_name = symbols->name;
+        // check if entry with same name already exists
+        if (mode == SYMTBL_UNIQUE_NAME && strcmp(current_name, name) == 0)  { 
+          name_already_exists(current_name);
+          return -1;
+        }
+        symbols++; // point to next symbol 
+    }
+
+    Symbol newSymbol;
+    newSymbol.name = name_copy;
+    newSymbol.addr = addr;
+
+    *symbols = newSymbol;
+    table->len += 1;
+
+    return 0;
 }
 
 /* Returns the address (byte offset) of the given symbol. If a symbol with name
    NAME is not present in TABLE, return -1.
  */
 int64_t get_addr_for_symbol(SymbolTable* table, const char* name) {
-    /* YOUR CODE HERE */
+    Symbol * symbols = table->tbl; // pointer to symbol list
+    int len = table->len; // get length of list
+
+    for (int i = 0; i < len; i++) {
+      char * current = symbols->name;  
+      if (strcmp(current, name) == 0)  { // compare each entry to name
+        return symbols->addr;
+      }
+      symbols++;  // point to the next element in the list
+    }
+
     return -1;   
 }
 
@@ -94,5 +178,12 @@ int64_t get_addr_for_symbol(SymbolTable* table, const char* name) {
    perform the write. Do not print any additional whitespace or characters.
  */
 void write_table(SymbolTable* table, FILE* output) {
-    /* YOUR CODE HERE */
+    int len = table->len;
+    Symbol * symbols = table->tbl;
+
+    for (int i = 0; i < len; i++) {
+      //printf("%s\n", "made it this far");
+      write_symbol(output, table->tbl[i].addr, table->tbl[i].name);
+      //symbols++;
+    }
 }

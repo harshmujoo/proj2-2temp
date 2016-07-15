@@ -143,29 +143,49 @@ int pass_one(FILE* input, FILE* output, SymbolTable* symtbl) {
     int ret_code = 0;
 
 
+
      // Read lines and add to instructions
     while(fgets(buf, BUF_SIZE, input)) {
         input_line++;
+        fgets(buf, BUF_SIZE, input);
 
         // Ignore comments
         skip_comment(buf);
 
         // Scan for the instruction name
-    	char* token = strtok(buf, IGNORE_CHARS);
+        char* token = strtok(buf, IGNORE_CHARS);
+        int i = 0;
 
-        // Scan for arguments
-        char* args[MAX_ARGS];
-        int num_args = 0;
+        if (token) {
+            if (add_if_label(input_line, token, byte_offset, symtbl)) {
+                token = strtok(NULL, IGNORE_CHARS);
+                if (token != 0) {
+                    i = 1;
+                }
+            }
 
-    	// Checks to see if there were any errors when writing instructions
-        unsigned int lines_written = write_pass_one(output, token, args, num_args);
-        if (lines_written == 0) {
-            raise_inst_error(input_line, token, args, num_args);
-            ret_code = -1;
-        } 
-        byte_offset += lines_written * 4;
-    }       
-    return -1;
+            // Scan for arguments
+            char* args[MAX_ARGS];
+            int num_args = 0;
+
+            if (!(parse_args(input_line, args, &num_args))) {
+                if (num_args) {
+                    if (i) {
+                        unsigned int lines_written = write_pass_one(output, token, args, num_args);
+                        if (!lines_written) {
+                            raise_inst_error(input_line, token, args, num_args);
+                            ret_code = -1;
+                        }
+                        byte_offset = byte_offset + (lines_written * 4);
+                    }
+                }
+            }
+            else {
+                ret_code = -1;
+            }
+        }
+    }
+    return -ret_code;
 }
 
 /* Reads an intermediate file and translates it into machine code. You may assume:
@@ -179,40 +199,28 @@ int pass_one(FILE* input, FILE* output, SymbolTable* symtbl) {
    the document, and at the end, return -1. Return 0 if no errors were encountered. */
 int pass_two(FILE *input, FILE* output, SymbolTable* symtbl, SymbolTable* reltbl) {
     /* YOUR CODE HERE */
-
-    /* Since we pass this buffer to strtok(), the characters in this buffer will
-       GET CLOBBERED. */
     char buf[BUF_SIZE];
-    /* Store input line number / byte offset. When should each be incremented? */
-    uint32_t input_line = 0; 
-    uint32_t byte_offset = 0;
-    int ret_code = 0;
-
-    /* First, read the next line into a buffer. */
+    int count = 0;
+    char *currLine;
+    uint32_t line = 0; 
+    uint32_t byte = 0;
     while (fgets(buf, BUF_SIZE, input)) {
-        input_line++;
+        currLine = strtok(buf, IGNORE_CHARS);
+        line++;
 
-        /* Next, use strtok() to scan for next character.*/
-        char* name = strtok(buf, IGNORE_CHARS);
-
-        // Error checking?
-
-        /* Parse for instruction arguments. You should use strtok() to tokenize
-           the rest of the line. Extra arguments should be filtered out in pass_one(),
-           so you don't need to worry about that here. */
-        char* args[MAX_ARGS];
         int num_args = 0;
+        char *args[MAX_ARGS];
+        parse_args(line, args, &num_args);
 
-
-        /* Use translate_inst() to translate the instruction and write to output file.
-           If an error occurs, the instruction will not be written and you should call
-           raise_inst_error(). */
-
-        int num = 0;
+        int retval = translate_inst(output, currLine, args, num_args, byte, symtbl, reltbl);
+        if (retval == 0) {
+            byte +=4;
+        } else {
+            raise_inst_error(line, currLine, args, num_args);
+            count -= 1;
+        }
     }
-    /* Repeat until no more characters are left */
-
-    return -1;
+    return count;
 }
 
 /*******************************

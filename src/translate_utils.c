@@ -56,12 +56,24 @@ int is_valid_label(const char* str) {
    function returns 0 if the conversion proceeded without errors, or -1 if an 
    error occurred.
  */
-int translate_num(long int* output, const char* str, long int lower_bound, 
-    long int upper_bound) {
+int translate_num(long int* output, const char* str, long int lower_bound, long int upper_bound) {
     if (!str || !output) {
         return -1;
     }
-    /* YOUR CODE HERE */
+
+    // convert str
+    char * endChar = ""; // stores first char in string after number (if applicable)
+    long int num = strtol(str, &endChar, 0); // 3rd parameter '0' should tell strtol to automatically detect base (needs testing)
+
+    // check for extra characters
+    if (!endChar[0]) {
+      // check if within bounds
+      if (lower_bound <= num  && num <= upper_bound)  {
+        *output = num; // store result in output
+        return 0;
+      }
+    }
+
     return -1;
 }
 
@@ -76,6 +88,29 @@ int translate_reg(const char* str) {
     else if (strcmp(str, "$at") == 0)   return 1;
     else if (strcmp(str, "$v0") == 0)   return 2;
     else if (strcmp(str, "$a0") == 0)   return 4;
-    /* YOUR CODE HERE */
+    else if (strcmp(str, "$a1") == 0)   return 5;
+    else if (strcmp(str, "$a2") == 0)   return 6;
+    else if (strcmp(str, "$a3") == 0)   return 7;
+    else if (strcmp(str, "$t0") == 0)   return 8;
+    else if (strcmp(str, "$t1") == 0)   return 9;
+    else if (strcmp(str, "$t2") == 0)   return 10;
+    else if (strcmp(str, "$t3") == 0)   return 11;
+    else if (strcmp(str, "$s0") == 0)   return 16;
+    else if (strcmp(str, "$s1") == 0)   return 17;
+    else if (strcmp(str, "$s2") == 0)   return 18;
+    else if (strcmp(str, "$s3") == 0)   return 19;
+    else if (strcmp(str, "$sp") == 0)   return 29;
+    else if (strcmp(str, "$ra") == 0)   return 31;
     else                                return -1;
 }
+
+
+
+
+
+
+
+
+
+
+
