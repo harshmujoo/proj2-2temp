@@ -161,7 +161,7 @@ relocate_inst_exit_error:
 	li $v0, -1
 relocate_inst_exit:
 	# epilogue
-	sw $a0, 24($sp)
+	lw $a0, 24($sp)
 	lw $s0, 20($sp)
 	lw $s1, 16($sp)
 	lw $s2, 12($sp)
