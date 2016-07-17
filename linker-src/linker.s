@@ -138,7 +138,7 @@ write_machine_code_to_file:
 		#  $a0 = int to write
 		#  $a1 = character buffer to write into
 		# Returns: none
-	move $a1, $s0
+	la $a1, hex_buffer
 	jal hex_to_str
 	
 	# 7. Increment the byte offset by the appropriate amount:
