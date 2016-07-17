@@ -82,7 +82,7 @@ unsigned write_pass_one(FILE* output, const char* name, char** args, int num_arg
         }  else {
           // convert rem $rd, $rs, $rt to div $rs, $rt; mfhi $rd;
           fprintf(output, "%s %s %s\n", "div", args[1], args[2]);
-          fprintf(output, "%s \n", "mfhi", args[0]);
+          fprintf(output, "%s %s\n", "mfhi", args[0]);
           return 2;
         }
     } else if (strcmp(name, "bge") == 0) {
@@ -358,8 +358,8 @@ int write_jump(uint8_t opcode, FILE* output, char** args, size_t num_args, uint3
     if (err == -1)  {
       return -1;
     }
-
-    uint32_t instruction = (instruction + opcode) << 26;
+    uint32_t instruction = 0;
+    instruction = (instruction + opcode) << 26;
     write_inst_hex(output, instruction);
     return 0;
 }

@@ -1,1 +1,1 @@
-mars nc sm linker-src/linker.s pa $@
+java -jar ~/Desktop/Mars.jar nc sm linker-src/linker.s pa $@

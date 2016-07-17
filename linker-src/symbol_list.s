@@ -54,15 +54,15 @@ addr_for_symbol:
 	sw $s1, 4($sp)
 	sw $s2, 8($sp)
 	sw $s3, 12($sp)
-	addi $s1, $a0, 0
-	addi $s2, $a1, 0
+	addi $s1, $a0, 0 # s1 = symtbl
+	addi $s2, $a1, 0 # s2 = name to look for
 
 loop1:
-	beq $s1, 0, miss
-	lw $a0, 4($s1)
-	jal streq
-	addi $a1, $s2, 0
-	beq $v0, $s0, hit
+	beq $s1, 0, miss # check if symtbl is null
+	lw $a0, 4($s1)	 # load first entry of symtbl
+	jal streq				 # check if a0 == name
+	addi $a1, $s2, 0 # place name back into a1
+	beq $v0, 0, hit	 # check if strings were equal
 	lw $s1, 8($s1)
 	j loop1
 

@@ -46,7 +46,50 @@ relocLabel: .asciiz ".relocation"
 # Returns: 1 if the instruction needs relocation, 0 otherwise.
 #------------------------------------------------------------------------------
 inst_needs_relocation:
-	# YOUR CODE HERE
+	addiu $sp, $sp, -24
+	sw $s0, 20($sp)
+	sw $s1, 16($sp)
+	sw $s2, 12($sp)
+	sw $s3, 8($sp)
+	sw $s4, 4($sp)
+	sw $ra, 0($sp)
+	li $v0, 0
+	# Check if instruction is j type
+	addiu $s0, $a0, 0 # load instruction into $s0
+
+	# Use shifting to isolate opcode
+	srl	$t0, $s0, 26
+
+	# Check if opcode is = 0x2 or 0x3, j or jal respectively
+	beq $t0, 2, inst_needs_relocation_return_true
+	beq $t0, 3, inst_needs_relocation_return_true
+
+	# Use shifting to isolate opcode and first five bit field
+	srl $t0, $s0, 21
+
+	# Check if inst is I type and contains global pointer
+	# check if opcode is zero
+	srl $t1, $t0, 5
+	bne $t1, 0, inst_needs_relocation_exit
+
+	# check for global pointer
+	# isolate first field, rs
+	andi $t1, $t0, 0x01f # mask to clear opcode
+	beq $t1, 28, inst_needs_relocation_return_true
+
+	j inst_needs_relocation_exit
+
+inst_needs_relocation_return_true:
+	li $v0, 1
+	j inst_needs_relocation_exit
+inst_needs_relocation_exit:
+	lw $s0, 20($sp)
+	lw $s1, 16($sp)
+	lw $s2, 12($sp)
+	lw $s3, 8($sp)
+	lw $s4, 4($sp)
+	lw $ra, 0($sp)
+	addiu $sp, $sp, 24
 	jr $ra
 	
 #------------------------------------------------------------------------------
@@ -68,7 +111,64 @@ inst_needs_relocation:
 # Returns: the relocated instruction, or -1 if error
 #------------------------------------------------------------------------------
 relocate_inst:
-	# YOUR CODE HERE
+	# prologue
+	addiu $sp, $sp, -28
+	sw $a0, 24($sp)
+	sw $s0, 20($sp)
+	sw $s1, 16($sp)
+	sw $s2, 12($sp)
+	sw $s3, 8($sp)
+	sw $s4, 4($sp)
+	sw $ra, 0($sp)
+	#start
+	addiu $s0, $a0, 0 # s0 = instruction
+	addiu	$s1, $a1, 0 # s1 = byte offset of instruction
+	addiu $s2, $a2, 0 # s2 = symbol table
+	addiu $s3, $a3, 0 # s3 = reloc table
+
+	# handle j and jal
+	srl	$t0, $s0, 26 # isolate opcode
+	beq $t0, 2, relocate_jump
+	beq $t0, 3, relocate_jump
+
+	# handle others
+	j relocate_inst_exit_error
+relocate_jump:
+	# isolate 26 bit field
+	sll $t0, $s0, 6
+	srl $t0, $t0, 6
+
+	# lookup address according to byte offset
+	addiu $a0, $s3, 0 # pointer to reloc
+	addiu $a1, $s1, 0 # addr to look for (byte offset)
+	jal symbol_for_addr
+	beq $v0, 0, relocate_inst_exit_error
+
+	# get absolute address of symbol
+	addiu $a0, $s2, 0 # symtbl param1
+	addiu $a1, $v0, 0 # symbol pointer param2
+	jal addr_for_symbol
+	beq $v0, -1, relocate_inst_exit_error
+
+	# replace symbol with address
+	srl $t0, $s0, 26 	# isolate opcode
+	sll $t0, $t0, 26 	# opcode + 0's
+	srl $v0, $v0, 2		# divide addr by 4 (why?)
+	or  $v0, $t0, $v0	# append address to opcode
+	j relocate_inst_exit
+
+relocate_inst_exit_error:
+	li $v0, -1
+relocate_inst_exit:
+	# epilogue
+	sw $a0, 24($sp)
+	lw $s0, 20($sp)
+	lw $s1, 16($sp)
+	lw $s2, 12($sp)
+	lw $s3, 8($sp)
+	lw $s4, 4($sp)
+	lw $ra, 0($sp)
+	addiu $sp, $sp, 28
 	jr $ra
 
 ###############################################################################
