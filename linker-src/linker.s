@@ -125,19 +125,9 @@ write_machine_code_next_inst:
 	# call relocate_inst
 	jal relocate_inst # Returns: the relocated instruction, or -1 if error
 	blt $v0, $0, write_machine_code_error
+	move $a0, $v0
 
 write_machine_code_to_file:
-	# 6. Write the instruction into a string buffer via hex_to_str():
-	# YOUR_INSTRUCTIONS_HERE 
-		# For example:
-		#  0xabcd1234 => "abcd1234\n\0"
-		#  0x134565FF => "134565ff\n\0"
-		#  0x38       => "00000038\n\0"
-		#
-		# Arguments:
-		#  $a0 = int to write
-		#  $a1 = character buffer to write into
-		# Returns: none
 	la $a1, hex_buffer
 	jal hex_to_str
 	
